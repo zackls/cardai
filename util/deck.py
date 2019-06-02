@@ -1,3 +1,4 @@
+import numpy as np
 
 '''
 The Deck class holds logic related to storing, drawing, and shuffling cards.
@@ -14,15 +15,19 @@ class Deck:
 	Return the top card from the deck.
 	'''
 	def draw(self):
-		# TODO implement
-		pass
+		return self.cards.pop()
+
+	'''
+	Add a card to the top of the deck.
+	'''
+	def add(self, card):
+		self.cards.append(card)
 
 	'''
 	Shuffle the deck to get an approximately random ordering.
 	'''
 	def shuffle(self):
-		# TODO implement
-		pass
+		self.cards = np.random.shuffle(self.cards)
 
 	'''
 	Return the top card from the deck.
