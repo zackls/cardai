@@ -77,14 +77,14 @@ class Agent:
 
         if self.dyna_steps:
             # If the game is over, update all past actions
-            start = len(self.memory) - 1 if game_ended else len(self.memory) - min(self.dyna, len(self.memory)) - 1
+            start = len(self.c_memory) - 1 if game_ended else len(self.c_memory) - min(self.dyna, len(self.c_memory)) - 1
             # Update q for past decisions
             for i in range(start, -1, -1):
-                _, best_future_utility = self._recommendAction(memory[i]["s'"])
-                self._updateQ(memory[i]["s"], memory[i]["a"], memory[i]["s'"], memory[i]["r"], self.endgame_discount_factor if game_ended else self.discount_factor, best_future_utility)
+                _, best_future_utility = self._recommendAction(self.c_memory[i]["s'"])
+                self._updateQ(self.c_memory[i]["s"], self.c_memory[i]["a"], self.c_memory[i]["s'"], self.c_memory[i]["r"], self.endgame_discount_factor if game_ended else self.discount_factor, best_future_utility)
 
         # Remember this
-        self.memory.append({
+        self.c_memory.append({
             "s": self.c_s,
             "a": self.a,
             "s'": new_c_s,
