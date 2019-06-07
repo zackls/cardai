@@ -1,6 +1,6 @@
 import numpy as np
 
-from util.helpers import getClosestObservedState, getValidActionsInState
+from util.helpers import getClosestObservedState, getValidActionsInState, compressAction, compressState
 
 '''
 The agent represents a player in the game. The purpose of this algorithm is to
@@ -14,6 +14,10 @@ different actions and entering various states. We will be able to learn from the
 agent by observing which actions they are likely to take in which situations.
 Since our state and action space is so large, all agents will share their q
 tables.
+
+Helpful notes:
+    "c" in a variable name typically stands for "compressed". Indexing into the q
+        table should always be done with compressed objects
 '''
 class Agent:
     '''
@@ -42,6 +46,7 @@ class Agent:
 
         # Current state
         self.s = None
+        self.c_s = None
 
         # Last action
         self.a = None
@@ -51,8 +56,9 @@ class Agent:
     '''
     def initialQuery(self, s):
         self.s = s
+        self.c_s = compressState(self.s)
 
-        recommended_action, _ = self._recommendAction(s)
+        recommended_action, _ = self._recommendAction(self.c_s)
         self.a = self._selectAction(recommended_action)
 
         return self.a
@@ -63,12 +69,11 @@ class Agent:
     action
     '''
     def query(self, new_s, reward, game_ended = False):
-        # TODO condense state and actions before moving into table
-
+        new_c_s = compressState(new_s)
         # Update q table for reward
-        closest_state, similarity = self._findClosestState(new_s)
-        recommended_action, best_future_utility = self._recommendAction(closest_state)
-        self._updateQ(self.s, self.a, new_s, reward, self.endgame_discount_factor if game_ended else self.discount_factor, similarity, best_future_utility)
+        closest_c_s, similarity = self._findClosestState(new_c_s)
+        recommended_action, best_future_utility = self._recommendAction(closest_c_s)
+        self._updateQ(self.c_s, self.a, reward, self.endgame_discount_factor if game_ended else self.discount_factor, similarity, best_future_utility)
 
         if self.dyna_steps:
             # If the game is over, update all past actions
@@ -80,14 +85,14 @@ class Agent:
 
         # Remember this
         self.memory.append({
-            "s": self.s,
+            "s": self.c_s,
             "a": self.a,
-            "s'": new_s,
+            "s'": new_c_s,
             "r": reward
         })
 
         # Update state
-        self.s = new_s
+        self.c_s = new_c_s
 
         # Select new action
         self.a = self._selectAction(recommended_action)
@@ -97,24 +102,20 @@ class Agent:
     '''
     Determine the closest state to the given state
     '''
-    def _findClosestState(self, to_state):
-        # similarity scales the future estimate by how similar new_s is to the
-        # closest state
-        closest_state = None
-        similarity = None
-        if to_state not in self.q:
-            return helpers.getClosestObservedState(to_state, q)
+    def _findClosestState(self, to_c_s):
+        if to_c_s not in self.q:
+            return helpers.getClosestObservedState(to_c_s, q)
         else:
-            return to_state, 1
+            return to_c_s, 1
 
     '''
     Determine the best possible action in a given state from the q table
     '''
-    def _recommendAction(self, in_state):
+    def _recommendAction(self, in_c_s):
         # find the best action in the closest state
         recommended_action = None
         best_future_utility = 0
-        for action, expected_reward in self.q[in_state].items():
+        for action, expected_reward in self.q[in_c_s].items():
             if expected_reward > best_future_utility:
                 recommended_action = action
         return recommended_action, best_future_utility
@@ -122,13 +123,13 @@ class Agent:
     '''
     Update the q table with a reward
     '''
-    def _updateQ(self, s, a, new_s, reward, discount_factor, similarity, best_future_utility):
-        if s not in self.q:
-            self.q[s] = {}
+    def _updateQ(self, c_s, a, reward, discount_factor, similarity, best_future_utility):
+        if c_s not in self.q:
+            self.q[c_s] = {}
 
         # this is a typical q-learning except for "similarity," which is factored
         # in to help deal with how big the state space is
-        self.q[s][a] = (1 - self.learning_rate) * self.q[s][a] + self.learning_rate * (reward + similarity * discount_factor * best_future_utility)
+        self.q[c_s][a] = (1 - self.learning_rate) * self.q[c_s][a] + self.learning_rate * (reward + similarity * discount_factor * best_future_utility)
 
     '''
     Select the best action, or a random one
