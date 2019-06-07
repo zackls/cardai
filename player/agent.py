@@ -53,7 +53,8 @@ class Agent:
         self.c_a = None
 
     '''
-    Set the initial state and return an uncompressed action
+    Set the initial state and return an uncompressed action. The state passed here
+    should be mutated in-place so that it never needs to be regenerated
     '''
     def initialQuery(self, s):
         self.s = s
@@ -71,8 +72,12 @@ class Agent:
     update its q table, update its state, append to its memory, and return a new
     action
     '''
-    def query(self, new_s, reward, game_ended = False):
-        new_c_s = compressState(new_s)
+    def query(self, reward, game_ended = False):
+        # The state should be mutated in place, so we don't actually need to be
+        # queried with the new state, just check the new compressed state against
+        # the old one
+        new_c_s = compressState(self.s)
+
         # Update q table for reward
         closest_c_s, similarity = self._findClosestState(new_c_s)
         recommended_c_a, best_future_utility = self._recommendAction(closest_c_s)
