@@ -55,6 +55,7 @@ class Game:
 		self.state = self._createInitialGlobalState()
 		self.player_states = [self._selectStateForPlayer(p) for p in range(len(self.players))]
 		self.max_turns = game_params.max_turns if "max_turns" in game_params else 500
+		self.winning_player = None
 
 	'''
 	Initialize an agent
@@ -95,23 +96,21 @@ class Game:
 	def run():
 		# kick things off
 		while self.state.g.turn < self.max_turns:
-			winning_player = self._runTurn()
-			if winning_player != None:
+			self._runTurn()
+			if self.winning_player != None:
 				# TODO return something more helpful
 				return "Player won"
 			self.state.g.turn += 1
 		return "Game reached maximum number of turns"
 
 	'''
-	Runs through a turn for all players. Returns the winning player if the game
-	has ended, None otherwise
+	Runs through a turn for all players.
 	'''
 	def _runTurn(self):
 		for p in range(len(self.players)):
-			winning_player = self._runActionsForP(p)
-			if winning_player != None:
-				return winning_player
-		return None
+			self._runActionsForP(p)
+			if self.winning_player != None:
+				return
 
 	'''
 	Runs through a players actions for a turn.
@@ -127,18 +126,13 @@ class Game:
 			action = self._queryP(p) # TODO how to reward a player after a round of turns?
 
 		# let the player act as long as they want
-		while self._executeActionForP(action, p):
-			# check if the action ended the game
-			winning_player = self._getWinningPlayer()
-			if winning_player:
-				return winning_player
-
-			# update player
+		while self._executeActionForP(action, p) and self.winning_player == None:
+			# update player, get new action
 			action = self._queryP(p) # TODO
 
 	'''
 	Reads an action and mutates state based on that action. Returns False if the
-	player has ended their turn
+	player has ended their turn. Sets self.winning_player if the game has ended
 	'''
 	def _executeActionForP(self, action, p):
 		# TODO implement
@@ -150,11 +144,3 @@ class Game:
 	def _queryP(self, p):
 		# TODO implement
 		return self.players[p].query()
-
-	'''
-	Determines if the game has ended. Returns None if no player has won, returns
-	the winning player otherwise
-	'''
-	def _getWinningPlayer(self):
-		# TODO implement
-		return None
