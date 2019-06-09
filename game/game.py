@@ -56,6 +56,7 @@ class Game:
 		self.player_states = [self._selectStateForPlayer(p) for p in range(len(self.players))]
 		self.max_turns = game_params.max_turns if "max_turns" in game_params else 500
 		self.winning_player = None
+		self.rewards = [0 for p in range(len(self.players))]
 
 	'''
 	Initialize an agent
@@ -123,12 +124,15 @@ class Game:
 			action = player.initialQuery(self._createInitialStateForP(p))
 		else:
 			# update player with last reward and get a new action
-			action = self._queryP(p) # TODO how to reward a player after a round of turns?
+			action = self._queryP(p)
 
 		# let the player act as long as they want
 		while self._executeActionForP(action, p) and self.winning_player == None:
 			# update player, get new action
-			action = self._queryP(p) # TODO
+			action = self._queryP(p)
+
+		if self.winning_player != None:
+			self._finish_game()
 
 	'''
 	Reads an action and mutates state based on that action. Returns False if the
@@ -142,5 +146,20 @@ class Game:
 	Update the player with the reward for their last action, and get a new action
 	'''
 	def _queryP(self, p):
-		# TODO implement
-		return self.players[p].query()
+		reward = self.rewards[p]
+		# reset reward
+		self.rewards[p] = 0
+		return self.players[p].query(reward, self.winning_player != None)
+
+	'''
+	Finish the game, distributing final rewards
+	'''
+	def _finish_game(self):
+		for p in range(self.players):
+			# the winner is given a reward of 1000, -1000 reward is distributed
+			# amongst the losers
+			if self.players[p] == self.winning_player:
+				self.rewards[p] += 1000
+			else:
+				self.rewards[p] -= 1000 / (len(self.players) - 1)
+			self._queryP(p)
