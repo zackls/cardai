@@ -1,4 +1,5 @@
 import pickle
+import json
 
 '''
 Returns a list of valid actions given a state
@@ -63,3 +64,13 @@ Save the q table to a file
 def saveQTableToFile(q):
 	with open(qTableFileLocation, "wb") as file:
 		pickle.dump(q, file)
+
+cardsTableFileLocation = "data/cards.json"
+'''
+Load the card definitions
+'''
+def loadCardDefinitions():
+	cards = None
+	with open(cardsTableFileLocation, "r") as file:
+		cards = json.load(file)
+	return cards
