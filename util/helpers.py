@@ -74,3 +74,13 @@ def loadCardDefinitions():
 	with open(cardsTableFileLocation, "r") as file:
 		cards = json.load(file)
 	return cards
+
+charactersArrayFileLocation = "data/characters.json"
+'''
+Load the character definitions
+'''
+def loadCharacterDefinitions():
+	characters = None
+	with open(charactersArrayFileLocation, "r") as file:
+		characters = json.load(file)
+	return characters
