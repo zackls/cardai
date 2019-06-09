@@ -8,7 +8,8 @@ class Deck:
 	Initialize a new deck. Cards is a list of card definitions
 	'''
 	def __init__(self, cards, name):
-		self.cards = cards
+		# create shallow copy of cards
+		self.cards = [card for card in cards]
 		self.name = name
 
 	'''
