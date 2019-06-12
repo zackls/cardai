@@ -73,21 +73,45 @@ class Game:
 	Initialize the global state
 	'''
 	def _createInitialGlobalState(self):
-		# TODO implement
-		return {
+		state = {
 			"g": { # global state
-				"turn": 1
+				"turn": 1,
+				"musician": None,
 			}
 		}
+		for p in range(len(self.players)):
+			# interal properties are properties which are only visible or relevant
+			# to the player
+			state["player_{}_internal".format(p)] = {
+				"status": "wait", # draw, wait, or play
+				"cards": [self.decks.main.draw() for _ in range(self.characters[p].initial_draw_amount)] # TODO consider musicians
+			}
+			state["player_{}_external".format(p)] = {
+				"p": p,
+				"hp": self.characters[p].max_hp,
+				"hp_until_max": 0,
+				"sp": self.characters[p].max_sp,
+				"max_sp": self.characters[p].max_sp,
+				"treasures": 0,
+				"answers": 0,
+				"has_secrets_in_hand": any([card.type == "secret" for card in state["player_{}_internal".format(p)].cards]),
+				"has_facedown_cards": False,
+				"num_cards": len(state["player_{}_internal".format(p)].cards),
+				"is_friend": False
+			}
+		return state
 
 	'''
 	Create a permanent state object to give to a player. This object should never
 	have to be recreated, ie never change the shallow references
 	'''
 	def _createInitialStateForP(self, p):
-		# TODO implement
 		return {
-			"g": self.state.g
+			"g": self.state.g,
+			"internal": self.state["player_{}_internal".format(p)],
+			"external": self.state["player_{}_external".format(p)],
+			"left": self.state["player_{}_external".format((p - 1) % len(self.players))], # the player or friend to the left
+			"right": self.state["player_{}_external".format((p + 1) % len(self.players))] # the player or friend to the right
 		}
 
 
