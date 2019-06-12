@@ -1,6 +1,7 @@
 
 from game.game import Game
 
+from util.card_definitions import CardDefinitions
 from util.helpers import loadQTableFromFile, saveQTableToFile, loadCardDefinitions, loadCharacterDefinitions
 
 def main():
@@ -10,6 +11,9 @@ def main():
 	q = loadQTableFromFile()
 	cards = loadCardDefinitions()
 	characters = loadCharacterDefinitions()
+
+	# initialize card definitions for querying
+	CardDefinitions.setDefinitions(cards["main"], cards["treasures"], cards["answers "])
 
 	# how many games to play per run
 	num_games = 1000
