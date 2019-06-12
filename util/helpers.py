@@ -46,15 +46,28 @@ def getClosestObservedState(state, q, tries=100):
 Minify an action to a unique string
 '''
 def compressAction(action):
-	# TODO implement
-	pass
+	return json.dumps({
+		"a": action.action,
+		"c": action.card_id,
+		"t": {
+			"d": action.target.direction,
+			"p": action.target.p
+		}
+	})
 
 '''
 Decompress a compressed action
 '''
 def decompressAction(compressed_action):
-	# TODO implement
-	pass
+	action = json.loads(compressed_action)
+	return {
+		"action": action.a,
+		"card_id": action.c
+		"target": {
+			"direction": action.t.d,
+			"p": action.t.p
+		} if action.t else None
+	}
 
 '''
 Minify a state object to a unique string. Leaves out player ids
