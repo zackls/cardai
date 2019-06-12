@@ -7,8 +7,31 @@ from util.card_definitions import CardDefinitions
 Returns a list of valid actions given a state
 '''
 def getValidActionsInState(state):
-	# TODO implement
-	pass
+	# can always do nothing
+	actions = [{
+		"action": "pass"
+	}]
+
+	# add drawing action based on SP
+	if state.internal.status == "draw" and state.external.sp >= 2:
+		actions.append({
+			"action": "draw"
+		})
+
+	# add actions for playing cards based on SP
+	for card in state.internal.cards:
+		targets = []
+		if card.type == "cocktail":
+			targets = ["l", "r"]
+		elif card.type == "snack":
+			targets = ["s"]
+		actions.extend([{
+			"action": "card",
+			"card_id": card.id,
+			"target": target
+		} for target in targets])
+
+	return actions
 
 '''
 Finds the closest state to the state passed in.
