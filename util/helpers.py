@@ -42,14 +42,6 @@ def getClosestObservedState(state, q, tries=100):
 	# TODO implement
 	pass
 
-'''
-Decompress a compressed state
-TODO my god, use a database
-'''
-def decompressState(compressed_state):
-	# TODO implement
-	pass
-
 qTableFileLocation = "data/q"
 '''
 Load the q table from a file to memory
