@@ -42,26 +42,6 @@ def getClosestObservedState(state, q, tries=100):
 	# TODO implement
 	pass
 
-qTableFileLocation = "data/q"
-'''
-Load the q table from a file to memory
-'''
-def loadQTableFromFile():
-	q = None
-	try:
-		with open(qTableFileLocation, "rb") as file:
-			q = pickle.load(file)
-	except FileNotFoundError:
-		# qTableFileLocation doesnt't exist yet, return a new q table
-		return {}
-	return q
-'''
-Save the q table to a file
-'''
-def saveQTableToFile(q):
-	with open(qTableFileLocation, "wb") as file:
-		pickle.dump(q, file)
-
 cardsTableFileLocation = "data/cards.json"
 '''
 Load the card definitions

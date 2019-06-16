@@ -2,13 +2,16 @@
 from game.game import Game
 
 from util.card_definitions import CardDefinitions
-from util.helpers import loadQTableFromFile, saveQTableToFile, loadCardDefinitions, loadCharacterDefinitions
+from util.database import Database
+from util.helpers import loadCardDefinitions, loadCharacterDefinitions
 
 def main():
 	# TODO implement command-line args
 
-	# load data
-	q = loadQTableFromFile()
+	# initialize database
+	Database.initialize()
+	q = Database.getQTable()
+
 	cards = loadCardDefinitions()
 	characters = loadCharacterDefinitions()
 
@@ -57,8 +60,8 @@ def main():
 		game = Game(q, game_params, agent_params, deck_params, character_params)
 		game.run()
 
-		# save q table after every game
-		saveQTableToFile(q)
+	# deinitialize database
+	Database.destroy()
  
 
 if __name__ == "__main__":
