@@ -43,71 +43,6 @@ def getClosestObservedState(state, q, tries=100):
 	pass
 
 '''
-Minify an action to a unique string
-'''
-def compressAction(action):
-	return json.dumps({
-		"a": action.action,
-		"c": action.card_id,
-		"t": {
-			"d": action.target.direction,
-			"p": action.target.p
-		}
-	})
-
-'''
-Decompress a compressed action
-'''
-def decompressAction(compressed_action):
-	action = json.loads(compressed_action)
-	return {
-		"action": action.a,
-		"card_id": action.c
-		"target": {
-			"direction": action.t.d,
-			"p": action.t.p
-		} if action.t else None
-	}
-
-'''
-Minify a state object to a unique string. Leaves out player ids
-TODO my god, use a database
-'''
-def compressState(state):
-	def minifyGlobalState(global_state):
-		return {
-			"t": global_state.turn,
-			"m": global_state.musician.id,
-		}
-
-	def minifyInternalState(internal_state):
-		return {
-			"s": internal_state.status
-			"c": sorted([card.id for card in internal_state.cards]),
-		}
-
-	def minifyExternalState(external_state):
-		return {
-			"h": external_state.hp,
-			"p": external_state.hp_until_max,
-			"s": external_state.sp,
-			"m": external_state.max_sp,
-			"t": external_state.treasures,
-			"a": external_state.answers,
-			"c": 0 if external_state.has_secrets_in_hand else 1,
-			"d": 0 if external_state.has_facedown_cards else 1,
-			"f": 0 if external_state.is_friend else 1
-		}
-
-	return json.dumps({
-		"g": minifyGlobalState(state.g),
-		"i": minifyInternalState(state.internal),
-		"e": minifyExternalState(state.external),
-		"l": minifyExternalState(state.left),
-		"r": minifyExternalState(state.right),
-	}, separators=(',',':'))
-
-'''
 Decompress a compressed state
 TODO my god, use a database
 '''
@@ -154,3 +89,97 @@ def loadCharacterDefinitions():
 	with open(charactersArrayFileLocation, "r") as file:
 		characters = json.load(file)
 	return characters
+
+
+class DatabaseHelpers:
+	"""
+	STATES
+	"""
+	globalStateFields = [
+		("turn", "TINYINT", "NOT NULL"),
+		("musician_card_id", "TINYINT", ""),
+	]
+	internalStateFields = [
+		("card_ids", "VARCHAR(64)", "NOT NULL"),
+		("status", "VARCHAR(8)", "NOT NULL"),
+	]
+	externalStateFields = [
+		("hp", "TINYINT", "NOT NULL"),
+		("hp_until_max", "TINYINT", "NOT NULL"),
+		("sp", "TINYINT", "NOT NULL"),
+		("max_sp", "TINYINT", "NOT NULL"),
+		("treasures", "TINYINT", "NOT NULL"),
+		("answers", "TINYINT", "NOT NULL"),
+		("has_secrets_in_hand", "BOOLEAN", "NOT NULL"),
+		("has_facedown_cards", "BOOLEAN", "NOT NULL"),
+		("num_cards", "TINYINT", "NOT NULL"),
+		("is_friend", "BOOLEAN", "NOT NULL"),
+	]
+	stateFields = [
+		*globalStateFields,
+		*internalStateFields,
+		*externalStateFields,
+		*[("left_{}".format(field), datatype, constraints) for field, datatype, constraints in externalStateFields],
+		*[("right_{}".format(field), datatype, constraints) for field, datatype, constraints in externalStateFields],
+	]
+	stateFieldsList = ",".join([field for field, _, _ in stateFields])
+
+	@staticmethod
+	def _globalStateToRow(global_state):
+		return ",".join([
+			global_state.turn,
+			global_state.musician.id if global_state.musician else None,
+		])
+	@staticmethod
+	def _internalStateToRow(internal_state):
+		return ",".join([
+			",".join(sorted([card.id for card in internal_state.cards])),
+			internal_state.status,
+		])
+	@staticmethod
+	def _externalStateToRow(external_state):
+		return ",".join([
+			external_state.hp,
+			external_state.hp_until_max,
+			external_state.sp,
+			external_state.max_sp,
+			external_state.treasures,
+			external_state.answers,
+			external_state.has_secrets_in_hand,
+			external_state.has_facedown_cards,
+			external_state.is_friend
+		])
+	@staticmethod
+	def stateToRow(state):
+		return ",".join([
+			DatabaseHelpers._globalStateToRow(state.g),
+			DatabaseHelpers._internalStateToRow(state.internal),
+			DatabaseHelpers._externalStateToRow(state.external),
+			DatabaseHelpers._externalStateToRow(state.left),
+			DatabaseHelpers._externalStateToRow(state.right),
+		])
+
+	"""
+	ACTIONS
+	"""
+	actionFields = [
+		("action", "VARCHAR(4)", "NOT NULL"),
+		("card_id", "TINYINT", ""),
+		("target", "VARCHAR(1)", "")
+	]
+	actionFieldsList = ",".join([field for field, _, _ in actionFields])
+
+	@staticmethod
+	def actionToRow(action):
+		return ",".join([
+			action.action,
+			action.card.id if action.card else None,
+			action.target,
+		])
+	@staticmethod
+	def rowToAction(row):
+		return {
+			"action": row[0],
+			"card": CardDefinitions.getCardById(row[1]),
+			"target": row[2]
+		}
