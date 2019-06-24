@@ -21,6 +21,17 @@ class Database:
 		))
 		return cls.c.lastrowid
 
+	'''
+	Finds the closest state to the state passed in.
+	Works by selecting a random set of already-observed
+	states from q and computing the closest.
+	'''
+	@classmethod
+	def getClosestObservedStateId(cls, to_s_id, batch_size=100):
+		cls.c.execute(DatabaseHelpers.buildClosestObservedStateQuery(to_s_id, batch_size))
+		state_id, similarity = cls.c.fetchone()
+		return state_id, similarity
+
 
 	"""
 	ACTIONS

@@ -33,15 +33,6 @@ def getValidActionsInState(state):
 
 	return actions
 
-'''
-Finds the closest state to the state passed in.
-Works by selecting a random set of already-observed
-states from q and computing the closest.
-'''
-def getClosestObservedState(state, q, tries=100):
-	# TODO implement
-	pass
-
 cardsTableFileLocation = "data/cards.json"
 '''
 Load the card definitions
@@ -130,6 +121,53 @@ class DatabaseHelpers:
 			DatabaseHelpers._externalStateToRow(state.left),
 			DatabaseHelpers._externalStateToRow(state.right),
 		])
+
+	@staticmethod
+	def buildClosestObservedStateQuery(state_id, batch_size):
+		# formulas for factors should be bounded between 0 and 1. 0 means the
+		# states are as different as possible in this metric, 1 means the states
+		# are identical in this metric. weights for factors also range from 0 to 1
+		# and determine how important each factor is. a weight of 0 means the
+		# factor is unimportant, 1 means the factor is extremely important
+		global_factors = [
+			# i dont think global factors are super important
+		]
+		internal_factors = [
+			# TODO cards are important
+			# TODO status should probably scale other factors
+			("(r.status = s.status)", 0.1)
+		]
+		external_factors = [
+			# SELF
+			# difference in hp, divided by average of max hps
+			("(2 * ABS(r.hp - s.hp) / (r.hp + r.hp_until_max + s.hp + s.hp_until_max))", 0.25),
+			# difference in sp, divided by average of max sps
+			("(2 * ABS(r.sp - s.sp) / (r.max_sp + s.max_sp))", 0.2),
+
+			# LEFT mimics self, but weight is halved
+			("(2 * ABS(r.left_hp - s.left_hp) / (r.left_hp + r.left_hp_until_max + s.left_hp + s.left_hp_until_max))", 0.125),
+			("(2 * ABS(r.left_sp - s.left_sp) / (r.left_max_sp + s.left_max_sp))", 0.1),
+
+			# RIGHT mimics self, but weight is halved
+			("(2 * ABS(r.right_hp - s.right_hp) / (r.right_hp + r.right_hp_until_max + s.right_hp + s.right_hp_until_max))", 0.125),
+			("(2 * ABS(r.right_sp - s.right_sp) / (r.right_max_sp + s.right_max_sp))", 0.1),
+
+			# TODO treasures, answers, has_secrets_in_hand, has_facedown_cards, is_friend
+		]
+		factors = [
+			*global_factors,
+			*internal_factors,
+			*external_factors
+		]
+		random_states_query = "SELECT * FROM state ORDER BY RANDOM() LIMIT {}".format(batch_size)
+		state_query = "SELECT * FROM state WHERE id = {}".format(state_id)
+		return """SELECT r.id, (
+			{}
+		) as similarity FROM ({}) r CROSS JOIN ({}) s ORDER BY similarity DESC LIMIT 1""".format(
+			"*".join(["(1 - ({}) * {})".format(formula, weight) for formula, weight in factors])
+			random_states_query,
+			state_query
+		)
 
 	"""
 	ACTIONS
