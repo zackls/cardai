@@ -1,7 +1,7 @@
 import numpy as np
 
 from util.database import Database
-from util.helpers import getClosestObservedState, getValidActionsInState
+from util.helpers import getValidActionsInState
 
 '''
 The agent represents a player in the game. The purpose of this algorithm is to
@@ -111,7 +111,7 @@ class Agent:
     '''
     def _findClosestState(self, to_s_id):
         if to_s_id not in self.q:
-            return helpers.getClosestObservedState(to_s_id, q)
+            return Database.getClosestObservedStateId(to_s_id)
         else:
             return to_s_id, 1
 
