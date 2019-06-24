@@ -7,10 +7,9 @@ class Deck:
 	'''
 	Initialize a new deck. Cards is a list of card definitions
 	'''
-	def __init__(self, cards, name):
+	def __init__(self, cards):
 		# create shallow copy of cards
 		self.cards = [card for card in cards]
-		self.name = name
 
 	'''
 	Return the top card from the deck.
@@ -28,7 +27,7 @@ class Deck:
 	Shuffle the deck to get an approximately random ordering.
 	'''
 	def shuffle(self):
-		self.cards = np.random.shuffle(self.cards)
+		np.random.shuffle(self.cards)
 
 	'''
 	Return the top card from the deck.

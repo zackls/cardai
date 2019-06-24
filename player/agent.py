@@ -36,12 +36,12 @@ class Agent:
         self.memory = []
         self.q = q
 
-        self.learning_rate = params.learning_rate if "learning_rate" in params else 0.4
-        self.discount_factor = params.discount_factor if "discount_factor" in params else 0.8
-        self.endgame_discount_factor = params.endgame_discount_factor if "endgame_discount_factor" in params else 0.975
-        self.random_action_rate = params.random_action_rate if "random_action_rate" in params else 0.1
-        self.dyna_steps = params.dyna_steps if "dyna_steps" in params else 10
-        self.verbose = params.verbose if "verbose" in params else False
+        self.learning_rate = params["learning_rate"] if "learning_rate" in params else 0.4
+        self.discount_factor = params["discount_factor"] if "discount_factor" in params else 0.8
+        self.endgame_discount_factor = params["endgame_discount_factor"] if "endgame_discount_factor" in params else 0.975
+        self.random_action_rate = params["random_action_rate"] if "random_action_rate" in params else 0.1
+        self.dyna_steps = params["dyna_steps"] if "dyna_steps" in params else 10
+        self.verbose = params["verbose"] if "verbose" in params else False
 
         # Current state
         self.s_id = None

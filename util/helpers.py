@@ -13,13 +13,13 @@ def getValidActionsInState(state):
 	}]
 
 	# add drawing action based on SP
-	if state.internal.status == "draw" and state.external.sp >= 2:
+	if state["internal"]["status"] == "draw" and state["external"]["sp"] >= 2:
 		actions.append({
 			"action": "draw"
 		})
 
 	# add actions for playing cards based on SP
-	for card in state.internal.cards:
+	for card in state["internal"]["cards"]:
 		targets = []
 		if card.type == "cocktail":
 			targets = ["l", "r"]
@@ -27,7 +27,7 @@ def getValidActionsInState(state):
 			targets = ["s"]
 		actions.extend([{
 			"action": "card",
-			"card_id": card.id,
+			"card_id": card["id"],
 			"target": target
 		} for target in targets])
 
@@ -55,6 +55,30 @@ def loadCharacterDefinitions():
 
 
 class DatabaseHelpers:
+	"""
+	HELPERS
+	"""
+	@staticmethod
+	def _parseInt(n):
+		return str(n) if n != None else "NULL"
+	@staticmethod
+	def _extractInt(s):
+		return int(s) if s != "NULL" else None
+
+	@staticmethod
+	def _parseBool(b):
+		return "true" if b else "false"
+	@staticmethod
+	def _extractBool(s):
+		return True if s == "true" else False
+
+	@staticmethod
+	def _parseStr(s):
+		return s if s != None else "NULL"
+	@staticmethod
+	def _extractStr(s):
+		return s if s != "NULL" else None
+
 	"""
 	STATES
 	"""
@@ -90,36 +114,36 @@ class DatabaseHelpers:
 	@staticmethod
 	def _globalStateToRow(global_state):
 		return ",".join([
-			global_state.turn,
-			global_state.musician.id if global_state.musician else None,
+			DatabaseHelpers._parseInt(global_state["turn"]),
+			DatabaseHelpers._parseInt(global_state["musician"]["id"]) if global_state["musician"] != None else "NULL",
 		])
 	@staticmethod
 	def _internalStateToRow(internal_state):
 		return ",".join([
-			",".join(sorted([card.id for card in internal_state.cards])),
-			internal_state.status,
+			",".join(sorted([DatabaseHelpers._parseInt(card["id"]) for card in internal_state["cards"]])) if internal_state["cards"].count else "NULL",
+			DatabaseHelpers._parseStr(internal_state["status"]),
 		])
 	@staticmethod
 	def _externalStateToRow(external_state):
 		return ",".join([
-			external_state.hp,
-			external_state.hp_until_max,
-			external_state.sp,
-			external_state.max_sp,
-			external_state.treasures,
-			external_state.answers,
-			external_state.has_secrets_in_hand,
-			external_state.has_facedown_cards,
-			external_state.is_friend
+			DatabaseHelpers._parseInt(external_state["hp"]),
+			DatabaseHelpers._parseInt(external_state["hp_until_max"]),
+			DatabaseHelpers._parseInt(external_state["sp"]),
+			DatabaseHelpers._parseInt(external_state["max_sp"]),
+			DatabaseHelpers._parseInt(external_state["treasures"]),
+			DatabaseHelpers._parseInt(external_state["answers"]),
+			DatabaseHelpers._parseBool(external_state["has_secrets_in_hand"]),
+			DatabaseHelpers._parseBool(external_state["has_facedown_cards"]),
+			DatabaseHelpers._parseBool(external_state["is_friend"])
 		])
 	@staticmethod
 	def stateToRow(state):
 		return ",".join([
-			DatabaseHelpers._globalStateToRow(state.g),
-			DatabaseHelpers._internalStateToRow(state.internal),
-			DatabaseHelpers._externalStateToRow(state.external),
-			DatabaseHelpers._externalStateToRow(state.left),
-			DatabaseHelpers._externalStateToRow(state.right),
+			DatabaseHelpers._globalStateToRow(state["g"]),
+			DatabaseHelpers._internalStateToRow(state["internal"]),
+			DatabaseHelpers._externalStateToRow(state["external"]),
+			DatabaseHelpers._externalStateToRow(state["left"]),
+			DatabaseHelpers._externalStateToRow(state["right"]),
 		])
 
 	@staticmethod
@@ -164,7 +188,7 @@ class DatabaseHelpers:
 		return """SELECT r.id, (
 			{}
 		) as similarity FROM ({}) r CROSS JOIN ({}) s ORDER BY similarity DESC LIMIT 1""".format(
-			"*".join(["(1 - ({}) * {})".format(formula, weight) for formula, weight in factors])
+			"*".join(["(1 - ({}) * {})".format(formula, weight) for formula, weight in factors]),
 			random_states_query,
 			state_query
 		)
@@ -182,14 +206,14 @@ class DatabaseHelpers:
 	@staticmethod
 	def actionToRow(action):
 		return ",".join([
-			action.action,
-			action.card.id if action.card else None,
-			action.target,
+			DatabaseHelpers._parseStr(action["action"]),
+			DatabaseHelpers._parseInt(["card"]["id"]) if "card" in action else "NULL",
+			DatabaseHelpers._parseStr(action["target"]),
 		])
 	@staticmethod
 	def rowToAction(row):
 		return {
-			"action": row[0],
-			"card": CardDefinitions.getCardById(row[1]),
-			"target": row[2]
+			"action": DatabaseHelpers._extractStr(row[0]),
+			"card": DatabaseHelpers._extractInt(CardDefinitions.getCardById(int(row[1]))),
+			"target": DatabaseHelpers._extractStr(row[2])
 		}
