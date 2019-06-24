@@ -28,33 +28,33 @@ class Game:
 		characters: a list of characters
 	'''
 	def __init__(self, q, game_params, agent_params, deck_params, character_params):
-		self.verbose = game_params.verbose if "verbose" in game_params else False
-		num_agents = game_params.num_agents if "num_agents" in game_params else 2
-		num_humans = game_params.num_humans if "num_humans" in game_params else 0
+		self.verbose = game_params["verbose"] if "verbose" in game_params else False
+		num_agents = game_params["num_agents"] if "num_agents" in game_params else 2
+		num_humans = game_params["num_humans"] if "num_humans" in game_params else 0
 
 		# create and shuffle players
-		self.players = [self._createAgent(q, agent_params) for _ in range(num_agents)] + [self._createHuman(q, agent_params) for _ in range(num_agents)]
+		self.players = [self._createAgent(q, agent_params) for _ in range(num_agents)] + [self._createHuman() for _ in range(num_humans)]
 		np.random.shuffle(self.players)
 
 		# create and shuffle decks
 		self.decks = {
-			"main": Deck(deck_params.main_cards, "main"),
-			"treasure": Deck(deck_params.treasure_cards, "treasure"),
-			"answer": Deck(deck_params.answer_cards, "answer"),
-			"discard": Deck([], "discard")
+			"main": Deck(deck_params["main_cards"]),
+			"treasure": Deck(deck_params["treasure_cards"]),
+			"answer": Deck(deck_params["answer_cards"]),
+			"discard": Deck([])
 		}
-		self.decks.main.shuffle()
-		self.decks.treasure.shuffle()
-		self.decks.answer.shuffle()
+		self.decks["main"].shuffle()
+		self.decks["treasure"].shuffle()
+		self.decks["answer"].shuffle()
 
 		# randomly distribute characters. correspond to each player by their index
-		self.characters = character_params.characters
+		self.characters = character_params["characters"]
 		np.random.shuffle(self.characters)
 
 		# set initial player states
 		self.state = self._createInitialGlobalState()
-		self.player_states = [self._selectStateForPlayer(p) for p in range(len(self.players))]
-		self.max_turns = game_params.max_turns if "max_turns" in game_params else 500
+		self.player_states = [self._createInitialStateForP(p) for p in range(len(self.players))]
+		self.max_turns = game_params["max_turns"] if "max_turns" in game_params else 500
 		self.winning_player = None
 		self.rewards = [0 for p in range(len(self.players))]
 
@@ -63,7 +63,7 @@ class Game:
 	'''
 	def _createAgent(self, q, agent_params):
 		# initialize agents with fresh memory, but the same q
-		return Agent([], q, agent_params)
+		return Agent(q, agent_params)
  
 	def _createHuman(self):
 		# maybe ill do this someday lol
@@ -84,19 +84,19 @@ class Game:
 			# to the player
 			state["player_{}_internal".format(p)] = {
 				"status": "wait", # draw, wait, or play
-				"cards": [self.decks.main.draw() for _ in range(self.characters[p].initial_draw_amount)] # TODO consider musicians
+				"cards": [self.decks["main"].draw() for _ in range(self.characters[p]["initial_draw_amount"])] # TODO consider musicians
 			}
 			state["player_{}_external".format(p)] = {
 				"p": p,
-				"hp": self.characters[p].max_hp,
+				"hp": self.characters[p]["max_hp"],
 				"hp_until_max": 0,
-				"sp": self.characters[p].max_sp,
-				"max_sp": self.characters[p].max_sp,
+				"sp": self.characters[p]["max_sp"],
+				"max_sp": self.characters[p]["max_sp"],
 				"treasures": 0,
 				"answers": 0,
-				"has_secrets_in_hand": any([card.type == "secret" for card in state["player_{}_internal".format(p)].cards]),
+				"has_secrets_in_hand": any([card["type"] == "secret" for card in state["player_{}_internal".format(p)]["cards"]]),
 				"has_facedown_cards": False,
-				"num_cards": len(state["player_{}_internal".format(p)].cards),
+				"num_cards": len(state["player_{}_internal".format(p)]["cards"]),
 				"is_friend": False
 			}
 		return state
@@ -107,7 +107,7 @@ class Game:
 	'''
 	def _createInitialStateForP(self, p):
 		return {
-			"g": self.state.g,
+			"g": self.state["g"],
 			"internal": self.state["player_{}_internal".format(p)],
 			"external": self.state["player_{}_external".format(p)],
 			"left": self.state["player_{}_external".format((p - 1) % len(self.players))], # the player or friend to the left
@@ -118,14 +118,14 @@ class Game:
 	'''
 	Runs the game! Returns the result as a string.
 	'''
-	def run():
+	def run(self):
 		# kick things off
-		while self.state.g.turn < self.max_turns:
+		while self.state["g"]["turn"] < self.max_turns:
 			self._runTurn()
 			if self.winning_player != None:
 				# TODO return something more helpful
 				return "Player won"
-			self.state.g.turn += 1
+			self.state["g"]["turn"] += 1
 		return "Game reached maximum number of turns"
 
 	'''
@@ -143,7 +143,7 @@ class Game:
 	def _runActionsForP(self, p):
 		player = self.players[p]
 		action = None
-		if self.state.g.turn == 1:
+		if self.state["g"]["turn"] == 1:
 			# get initial action
 			action = player.initialQuery(self._createInitialStateForP(p))
 		else:

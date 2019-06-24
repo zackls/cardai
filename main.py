@@ -16,7 +16,7 @@ def main():
 	characters = loadCharacterDefinitions()
 
 	# initialize card definitions for querying
-	CardDefinitions.setDefinitions(cards["main"], cards["treasures"], cards["answers "])
+	CardDefinitions.setDefinitions(cards["main"], cards["treasures"], cards["answers"])
 
 	# how many games to play per run
 	num_games = 1000
@@ -41,20 +41,20 @@ def main():
 
 	# deck params as defined in game/game.py
 	deck_params = {
-		"main_cards": cards["main"],
-		"treasure_cards": cards["treasures"],
-		"answer_cards": cards["answers"]
+		"main_cards": CardDefinitions.cards["main"],
+		"treasure_cards": CardDefinitions.cards["treasures"],
+		"answer_cards": CardDefinitions.cards["answers"]
 	}
 
 	# character params as defined in game/game.py
 	character_params = {
-		characters: characters
+		"characters": characters
 	}
 
 	for game_number in range(num_games):
 		verbose = game_number % verbose_mod == verbose_mod - 1
-		game_params.verbose = verbose
-		agent_params.verbose = verbose
+		game_params["verbose"] = verbose
+		agent_params["verbose"] = verbose
 
 		print("Running game {}".format(game_number + 1))
 		game = Game(q, game_params, agent_params, deck_params, character_params)
