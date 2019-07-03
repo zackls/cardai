@@ -1,7 +1,7 @@
 import numpy as np
 
 from player.agent import Agent
-
+from util.card_definitions import CardDefinitions
 from util.deck import Deck
 
 '''
@@ -133,6 +133,9 @@ class Game:
 	'''
 	def _runTurn(self):
 		for p in range(len(self.players)):
+			# refill player sp before running actions
+			self.state["player_{}_external".format(p)]["sp"] = self.state["player_{}_external".format(p)]["max_sp"]
+
 			self._runActionsForP(p)
 			if self.winning_player != None:
 				return
@@ -163,8 +166,44 @@ class Game:
 	player has ended their turn. Sets self.winning_player if the game has ended
 	'''
 	def _executeActionForP(self, action, p):
-		# TODO implement
-		return True
+		# cache refs to P's internal and external states
+		i = self.state["player_{}_internal".format(p)]
+		e = self.state["player_{}_external".format(p)]
+
+		if action["action"] == "pass":
+			i["status"] = "wait"
+			return False
+
+		if action["action"] == "draw":
+			i["status"] = "draw"
+			i["cards"].append(self.decks["main"].draw()) # todo handle stack running out of cards
+			e["sp"] -= 2
+			return True
+
+		if action["action"] == "card":
+			i["status"] = "play"
+			card = CardDefinitions.getCardById(action["card_id"])
+			e["sp"] -= card["sp"]
+
+			# for now, cards can only heal themselves or damage others
+			# player can only heal if they aren't already dead
+			if "heal" in card and e["hp"] > 0:
+				actual_healing = min(card["heal"], e["hp_until_max"])
+				e["hp"] += actual_healing
+				e["hp_until_max"] -= actual_healing
+			if "damage" in card:
+				targetP = p - 1 if action["target"] == "l" else p - len(self.players) + 1
+				targetE = self.state["player_{}_external".format(targetP)]
+				actual_damage = min(card["damage"], targetE["hp"])
+				targetE["hp"] -= actual_damage
+				targetE["hp_until_max"] += actual_damage
+
+				# check if this ended the game
+				alive = [self.players[other_p] for other_p in range(len(self.players)) if self.state["player_{}_external".format(other_p)] > 0]
+				if len(alive) == 1:
+					self.winning_player = alive[0]
+
+			return True
 
 	'''
 	Update the player with the reward for their last action, and get a new action

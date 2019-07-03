@@ -13,17 +13,20 @@ def getValidActionsInState(state):
 	}]
 
 	# add drawing action based on SP
-	if state["internal"]["status"] == "draw" and state["external"]["sp"] >= 2:
+	if (state["internal"]["status"] == "draw" or state["internal"]["status"] == "wait") and state["external"]["sp"] >= 2:
 		actions.append({
 			"action": "draw"
 		})
 
 	# add actions for playing cards based on SP
 	for card in state["internal"]["cards"]:
+		# check if the card can be paid for
+		if card["sp"] < state["external"]["sp"]:
+			continue
 		targets = []
-		if card.type == "cocktail":
+		if card["type"] == "cocktail":
 			targets = ["l", "r"]
-		elif card.type == "snack":
+		elif card["type"] == "snack":
 			targets = ["s"]
 		actions.extend([{
 			"action": "card",
