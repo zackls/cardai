@@ -9,19 +9,17 @@ class Deck:
 	'''
 	def __init__(self, cards):
 		# create shallow copy of cards
-		self.cards = [card for card in cards]
+		self.original_cards = cards
+		self.cards = []
 
 	'''
-	Return the top card from the deck.
+	Return the top card from the deck, refilling the cards if necessary.
 	'''
 	def draw(self):
+		if len(self.cards) == 0:
+			self.cards = [card for card in self.original_cards]
+			self.shuffle()
 		return self.cards.pop()
-
-	'''
-	Add a card to the top of the deck.
-	'''
-	def add(self, card):
-		self.cards.append(card)
 
 	'''
 	Shuffle the deck to get an approximately random ordering.

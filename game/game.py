@@ -41,11 +41,7 @@ class Game:
 			"main": Deck(deck_params["main_cards"]),
 			"treasure": Deck(deck_params["treasure_cards"]),
 			"answer": Deck(deck_params["answer_cards"]),
-			"discard": Deck([])
 		}
-		self.decks["main"].shuffle()
-		self.decks["treasure"].shuffle()
-		self.decks["answer"].shuffle()
 
 		# randomly distribute characters. correspond to each player by their index
 		self.characters = character_params["characters"]
@@ -176,7 +172,7 @@ class Game:
 
 		if action["action"] == "draw":
 			i["status"] = "draw"
-			i["cards"].append(self.decks["main"].draw()) # todo handle stack running out of cards
+			i["cards"].append(self.decks["main"].draw())
 			e["sp"] -= 2
 			return True
 
