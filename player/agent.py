@@ -166,12 +166,22 @@ class Agent:
         if not recommended_a_id or np.random.random() < self.random_action_rate or recommended_a_id not in possible_action_ids:
             random_action_index = np.random.randint(len(possible_action_ids))
             random_action_id = possible_action_ids[random_action_index]
+            self._printIfVerbose("agent randomly chose", possible_actions[random_action_index])
             return random_action_id, possible_actions[random_action_index]
         else:
-            return recommended_a_id, Database.getAction(recommended_a_id)
+            action = Database.getAction(recommended_a_id)
+            self._printIfVerbose("agent chose", action)
+            return recommended_a_id, action
 
     def _snapState(self):
         s_id = Database.upsertState(self.s)
         if s_id not in self.q:
             self.q[s_id] = {}
         return s_id
+
+    '''
+    Print to the console if verbose is True
+    '''
+    def _printIfVerbose(self, *args):
+        if self.verbose:
+            print(*args)

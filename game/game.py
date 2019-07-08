@@ -242,3 +242,10 @@ class Game:
 			else:
 				self.rewards[p] -= 1000 / (len(self.players) - 1)
 			self._queryP(p)
+
+	'''
+	Print to the console if verbose is True
+	'''
+	def _printIfVerbose(self, *args):
+		if self.verbose:
+			print(*args)
