@@ -49,7 +49,6 @@ class Game:
 
 		# set initial player states
 		self.state = self._createInitialGlobalState()
-		self.player_states = [self._createInitialStateForP(p) for p in range(len(self.players))]
 		self.max_turns = game_params["max_turns"] if "max_turns" in game_params else 500
 		self.winning_player = None
 		self.rewards = [0 for p in range(len(self.players))]
@@ -83,7 +82,6 @@ class Game:
 				"cards": [self.decks["main"].draw() for _ in range(self.characters[p]["initial_draw_amount"])] # TODO consider musicians
 			}
 			state["player_{}_external".format(p)] = {
-				"p": p,
 				"hp": self.characters[p]["max_hp"],
 				"hp_until_max": 0,
 				"sp": self.characters[p]["max_sp"],
@@ -92,7 +90,7 @@ class Game:
 				"answers": 0,
 				"has_secrets_in_hand": any([card["type"] == "secret" for card in state["player_{}_internal".format(p)]["cards"]]),
 				"has_facedown_cards": False,
-				"num_cards": len(state["player_{}_internal".format(p)]["cards"]),
+				# "num_cards": len(state["player_{}_internal".format(p)]["cards"]),
 				"is_friend": False
 			}
 		return state
@@ -119,9 +117,8 @@ class Game:
 		while self.state["g"]["turn"] < self.max_turns:
 			self._runTurn()
 			if self.winning_player != None:
-				# TODO return something more helpful
+				print("Game went to turn {}".format(self.state["g"]["turn"]))
 				return "Player won"
-			self.state["g"]["turn"] += 1
 		return "Game reached maximum number of turns"
 
 	'''
@@ -136,9 +133,11 @@ class Game:
 			if self.winning_player != None:
 				return
 
+		self.state["g"]["turn"] += 1
+
 	'''
 	Runs through a players actions for a turn.
-	'''
+	''' 
 	def _runActionsForP(self, p):
 		player = self.players[p]
 		action = None
@@ -155,7 +154,7 @@ class Game:
 			action = self._queryP(p)
 
 		if self.winning_player != None:
-			self._finish_game()
+			self._finishGame()
 
 	'''
 	Reads an action and mutates state based on that action. Returns False if the
@@ -174,28 +173,49 @@ class Game:
 			i["status"] = "draw"
 			i["cards"].append(self.decks["main"].draw())
 			e["sp"] -= 2
+			# reward a tiny bit for how much sp is left after the draw
+			self.rewards[p] += e["sp"] - e["max_sp"] / 2
 			return True
 
 		if action["action"] == "card":
 			i["status"] = "play"
 			card = CardDefinitions.getCardById(action["card_id"])
 			e["sp"] -= card["sp"]
+			
+			# this works because agents have identical references to cards
+			i["cards"].remove(card)
 
 			# for now, cards can only heal themselves or damage others
-			# player can only heal if they aren't already dead
-			if "heal" in card and e["hp"] > 0:
-				actual_healing = min(card["heal"], e["hp_until_max"])
-				e["hp"] += actual_healing
-				e["hp_until_max"] -= actual_healing
+			if "heal" in card:
+				# player can only heal if they aren't already dead
+				if e["hp"] > 0:
+					actual_healing = min(card["heal"], e["hp_until_max"])
+					e["hp"] += actual_healing
+					e["hp_until_max"] -= actual_healing
+
+					# reward healing
+					self.rewards[p] += actual_healing * 3
+				else:
+					# penalize for trying to heal while dead
+					self.rewards[p] -= card["heal"] * 3
+
 			if "damage" in card:
-				targetP = p - 1 if action["target"] == "l" else p - len(self.players) + 1
+				targetP = (p - 1 if action["target"] == "l" else p - len(self.players) + 1) % len(self.players)
 				targetE = self.state["player_{}_external".format(targetP)]
 				actual_damage = min(card["damage"], targetE["hp"])
 				targetE["hp"] -= actual_damage
 				targetE["hp_until_max"] += actual_damage
 
+				# reward damage like healing, but proportionally to how many
+				# players are playing the game
+				self.rewards[p] += actual_damage * 3 / (len(self.players) - 1)
+
+				# bonus reward if the action killed the other player
+				if targetE["hp"] == 0:
+					self.rewards[p] += 50
+
 				# check if this ended the game
-				alive = [self.players[other_p] for other_p in range(len(self.players)) if self.state["player_{}_external".format(other_p)] > 0]
+				alive = [self.players[other_p] for other_p in range(len(self.players)) if self.state["player_{}_external".format(other_p)]["hp"] > 0]
 				if len(alive) == 1:
 					self.winning_player = alive[0]
 
@@ -213,8 +233,8 @@ class Game:
 	'''
 	Finish the game, distributing final rewards
 	'''
-	def _finish_game(self):
-		for p in range(self.players):
+	def _finishGame(self):
+		for p in range(len(self.players)):
 			# the winner is given a reward of 1000, -1000 reward is distributed
 			# amongst the losers
 			if self.players[p] == self.winning_player:

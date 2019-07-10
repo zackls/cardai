@@ -44,6 +44,7 @@ class Agent:
         self.verbose = params["verbose"] if "verbose" in params else False
 
         # Current state
+        self.s = None
         self.s_id = None
 
         # Last action
@@ -56,7 +57,7 @@ class Agent:
     '''
     def initialQuery(self, s):
         self.s = s
-        self.s_id = Database.upsertState(self.s)
+        self.s_id = self._snapState()
 
         recommended_a_id, _ = self._recommendAction(self.s_id)
 
@@ -70,23 +71,30 @@ class Agent:
     action
     '''
     def query(self, reward, game_ended = False):
+        # its possible that another player won before initialQuery is called, just
+        # return in this case
+        if not self.s:
+            return
+
         # The state should be mutated in place, so we don't actually need to be
         # queried with the new state, just check the new state against the old one
-        
         old_s_id = self.s_id
+        new_s_id = self._snapState()
+
+        df = self.endgame_discount_factor if game_ended else self.discount_factor
 
         # Update q table for reward
         closest_s_id, similarity = self._findClosestState(old_s_id)
         recommended_a_id, best_future_utility = self._recommendAction(closest_s_id)
-        new_s_id = self._updateQ(old_s_id, self.a_id, reward, self.endgame_discount_factor if game_ended else self.discount_factor, similarity, best_future_utility)
+        self._updateQ(old_s_id, self.a_id, reward, df, similarity, best_future_utility)
 
         if self.dyna_steps:
             # If the game is over, update all past actions
-            start = len(self.memory) - 1 if game_ended else len(self.memory) - min(self.dyna, len(self.memory)) - 1
+            start = len(self.memory) - 1 if game_ended else len(self.memory) - min(self.dyna_steps, len(self.memory)) - 1
             # Update q for past decisions
             for i in range(start, -1, -1):
                 _, best_future_utility = self._recommendAction(self.memory[i]["s'"])
-                self._updateQ(self.memory[i]["s"], self.memory[i]["a"], self.memory[i]["s'"], self.memory[i]["r"], self.endgame_discount_factor if game_ended else self.discount_factor, best_future_utility)
+                self._updateQ(self.memory[i]["s"], self.memory[i]["a"], self.memory[i]["s'"], self.memory[i]["r"], df, best_future_utility)
 
         # Remember this
         self.memory.append({
@@ -110,7 +118,7 @@ class Agent:
     Determine the closest state to the given state
     '''
     def _findClosestState(self, to_s_id):
-        if to_s_id not in self.q:
+        if not any(self.q[to_s_id]):
             return Database.getClosestObservedStateId(to_s_id)
         else:
             return to_s_id, 1
@@ -122,9 +130,12 @@ class Agent:
         # find the best action in the closest state
         recommended_a_id = None
         best_future_utility = 0
-        for a_id, expected_reward in self.q[in_s_id].items():
-            if expected_reward > best_future_utility:
-                recommended_a_id = a_id
+        # in_s_id could be None if no closest states were found, and it could not
+        # be in q if the game ended before querying the agent with that state
+        if in_s_id != None and in_s_id in self.q:
+            for a_id, expected_reward in self.q[in_s_id].items():
+                if expected_reward > best_future_utility:
+                    recommended_a_id = a_id
         return recommended_a_id, best_future_utility
 
     '''
@@ -133,6 +144,9 @@ class Agent:
     def _updateQ(self, s_id, a_id, reward, discount_factor, similarity, best_future_utility):
         if s_id not in self.q:
             self.q[s_id] = {}
+
+        if a_id not in self.q[s_id]:
+            self.q[s_id][a_id] = 0
 
         # this is a typical q-learning except for "similarity," which is factored
         # in to help deal with how big the state space is
@@ -155,3 +169,9 @@ class Agent:
             return random_action_id, possible_actions[random_action_index]
         else:
             return recommended_a_id, Database.getAction(recommended_a_id)
+
+    def _snapState(self):
+        s_id = Database.upsertState(self.s)
+        if s_id not in self.q:
+            self.q[s_id] = {}
+        return s_id
