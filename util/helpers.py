@@ -63,17 +63,17 @@ class DatabaseHelpers:
 	"""
 	@staticmethod
 	def _parseInt(n):
-		return str(n) if n != None else "NULL"
+		return str(n if n != None else -1)
 	@staticmethod
 	def _extractInt(s):
-		return int(s) if s != "NULL" else None
+		return s if s != -1 else None
 
 	@staticmethod
 	def _parseFloat(n):
-		return str(n) if n != None else "NULL"
+		return str(n if n != None else -1)
 	@staticmethod
 	def _extractFloat(s):
-		return float(s) if s != "NULL" else None
+		return s if s != -1 else None
 
 	@staticmethod
 	def _parseBool(b):
@@ -84,42 +84,42 @@ class DatabaseHelpers:
 
 	@staticmethod
 	def _parseStr(s):
-		return "\"{}\"".format(s) if s != None else "NULL"
+		return "\"{}\"".format(s) if s != None else ""
 	@staticmethod
 	def _extractStr(s):
-		return s if s != "NULL" else None
+		return s if s != "" else None
 
 	"""
 	STATES
 	"""
 	globalStateFields = [
-		("turn", "TINYINT", "NOT NULL"),
+		("turn", "TINYINT"),
 		# ("musician_card_id", "TINYINT", ""),
 	]
 	internalStateFields = [
-		("card_ids", "VARCHAR(64)", "NOT NULL"),
-		("status", "VARCHAR(8)", "NOT NULL"),
+		("card_ids", "VARCHAR(64)"),
+		("status", "VARCHAR(8)"),
 	]
 	externalStateFields = [
-		("hp", "TINYINT", "NOT NULL"),
-		("hp_until_max", "TINYINT", "NOT NULL"),
-		("sp", "TINYINT", "NOT NULL"),
-		("max_sp", "TINYINT", "NOT NULL"),
-		# ("treasures", "TINYINT", "NOT NULL"),
-		# ("answers", "TINYINT", "NOT NULL"),
-		# ("has_secrets_in_hand", "BOOLEAN", "NOT NULL"),
-		# ("has_facedown_cards", "BOOLEAN", "NOT NULL"),
-		# ("num_cards", "TINYINT", "NOT NULL"),
-		# ("is_friend", "BOOLEAN", "NOT NULL"),
+		("hp", "TINYINT"),
+		("hp_until_max", "TINYINT"),
+		("sp", "TINYINT"),
+		("max_sp", "TINYINT"),
+		# ("treasures", "TINYINT"),
+		# ("answers", "TINYINT"),
+		# ("has_secrets_in_hand", "BOOLEAN"),
+		# ("has_facedown_cards", "BOOLEAN"),
+		# ("num_cards", "TINYINT"),
+		# ("is_friend", "BOOLEAN"),
 	]
 	stateFields = [
 		*globalStateFields,
 		*internalStateFields,
 		*externalStateFields,
-		*[("left_{}".format(field), datatype, constraints) for field, datatype, constraints in externalStateFields],
-		*[("right_{}".format(field), datatype, constraints) for field, datatype, constraints in externalStateFields],
+		*[("left_{}".format(field), datatype) for field, datatype in externalStateFields],
+		*[("right_{}".format(field), datatype) for field, datatype in externalStateFields],
 	]
-	stateFieldsList = ",".join([field for field, _, _ in stateFields])
+	stateFieldsList = ",".join([field for field, _ in stateFields])
 
 	@staticmethod
 	def _globalStateToRow(global_state):
@@ -207,18 +207,18 @@ class DatabaseHelpers:
 	ACTIONS
 	"""
 	actionFields = [
-		("action", "VARCHAR(4)", "NOT NULL"),
-		("card_id", "TINYINT", ""),
-		("target", "VARCHAR(1)", "")
+		("action", "VARCHAR(4)"),
+		("card_id", "TINYINT"),
+		("target", "VARCHAR(1)")
 	]
-	actionFieldsList = ",".join([field for field, _, _ in actionFields])
+	actionFieldsList = ",".join([field for field, _ in actionFields])
 
 	@staticmethod
 	def actionToRow(action):
 		return ",".join([
 			DatabaseHelpers._parseStr(action["action"]),
-			DatabaseHelpers._parseInt(["card"]["id"]) if "card" in action else "NULL",
-			DatabaseHelpers._parseStr(action["target"]) if "target" in action else "NULL",
+			DatabaseHelpers._parseInt(["card"]["id"]) if "card" in action else -1,
+			DatabaseHelpers._parseStr(action["target"]) if "target" in action else "",
 		])
 	@staticmethod
 	def rowToAction(row):

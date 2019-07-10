@@ -102,7 +102,7 @@ class Database:
 			{},
 			UNIQUE({})
 		)""".format(
-			",".join(["{} {} {}".format(field, datatype, constraints) for field, datatype, constraints in DatabaseHelpers.stateFields]),
+			",".join(["{} {} NOT NULL".format(field, datatype) for field, datatype in DatabaseHelpers.stateFields]),
 			DatabaseHelpers.stateFieldsList
 		))
 
@@ -111,7 +111,7 @@ class Database:
 			{},
 			UNIQUE({})
 		)""".format(
-			",".join(["{} {} {}".format(field, datatype, constraints) for field, datatype, constraints in DatabaseHelpers.actionFields]),
+			",".join(["{} {} NOT NULL".format(field, datatype) for field, datatype in DatabaseHelpers.actionFields]),
 			DatabaseHelpers.actionFieldsList
 		))
 
