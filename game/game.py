@@ -72,7 +72,7 @@ class Game:
 		state = {
 			"g": { # global state
 				"turn": 1,
-				"musician": None,
+				# "musician": None,
 			}
 		}
 		for p in range(len(self.players)):
@@ -87,12 +87,12 @@ class Game:
 				"hp_until_max": 0,
 				"sp": self.characters[p]["max_sp"],
 				"max_sp": self.characters[p]["max_sp"],
-				"treasures": 0,
-				"answers": 0,
-				"has_secrets_in_hand": any([card["type"] == "secret" for card in state["player_{}_internal".format(p)]["cards"]]),
-				"has_facedown_cards": False,
+				# "treasures": 0,
+				# "answers": 0,
+				# "has_secrets_in_hand": any([card["type"] == "secret" for card in state["player_{}_internal".format(p)]["cards"]]),
+				# "has_facedown_cards": False,
 				# "num_cards": len(state["player_{}_internal".format(p)]["cards"]),
-				"is_friend": False
+				# "is_friend": False
 			}
 		return state
 

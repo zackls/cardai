@@ -94,7 +94,7 @@ class DatabaseHelpers:
 	"""
 	globalStateFields = [
 		("turn", "TINYINT", "NOT NULL"),
-		("musician_card_id", "TINYINT", ""),
+		# ("musician_card_id", "TINYINT", ""),
 	]
 	internalStateFields = [
 		("card_ids", "VARCHAR(64)", "NOT NULL"),
@@ -105,12 +105,12 @@ class DatabaseHelpers:
 		("hp_until_max", "TINYINT", "NOT NULL"),
 		("sp", "TINYINT", "NOT NULL"),
 		("max_sp", "TINYINT", "NOT NULL"),
-		("treasures", "TINYINT", "NOT NULL"),
-		("answers", "TINYINT", "NOT NULL"),
-		("has_secrets_in_hand", "BOOLEAN", "NOT NULL"),
-		("has_facedown_cards", "BOOLEAN", "NOT NULL"),
+		# ("treasures", "TINYINT", "NOT NULL"),
+		# ("answers", "TINYINT", "NOT NULL"),
+		# ("has_secrets_in_hand", "BOOLEAN", "NOT NULL"),
+		# ("has_facedown_cards", "BOOLEAN", "NOT NULL"),
 		# ("num_cards", "TINYINT", "NOT NULL"),
-		("is_friend", "BOOLEAN", "NOT NULL"),
+		# ("is_friend", "BOOLEAN", "NOT NULL"),
 	]
 	stateFields = [
 		*globalStateFields,
@@ -125,7 +125,7 @@ class DatabaseHelpers:
 	def _globalStateToRow(global_state):
 		return ",".join([
 			DatabaseHelpers._parseInt(global_state["turn"]),
-			DatabaseHelpers._parseInt(global_state["musician"]["id"]) if global_state["musician"] != None else "NULL",
+			# DatabaseHelpers._parseInt(global_state["musician"]["id"]) if global_state["musician"] != None else "NULL",
 		])
 	@staticmethod
 	def _internalStateToRow(internal_state):
@@ -140,11 +140,11 @@ class DatabaseHelpers:
 			DatabaseHelpers._parseInt(external_state["hp_until_max"]),
 			DatabaseHelpers._parseInt(external_state["sp"]),
 			DatabaseHelpers._parseInt(external_state["max_sp"]),
-			DatabaseHelpers._parseInt(external_state["treasures"]),
-			DatabaseHelpers._parseInt(external_state["answers"]),
-			DatabaseHelpers._parseBool(external_state["has_secrets_in_hand"]),
-			DatabaseHelpers._parseBool(external_state["has_facedown_cards"]),
-			DatabaseHelpers._parseBool(external_state["is_friend"])
+			# DatabaseHelpers._parseInt(external_state["treasures"]),
+			# DatabaseHelpers._parseInt(external_state["answers"]),
+			# DatabaseHelpers._parseBool(external_state["has_secrets_in_hand"]),
+			# DatabaseHelpers._parseBool(external_state["has_facedown_cards"]),
+			# DatabaseHelpers._parseBool(external_state["is_friend"])
 		])
 	@staticmethod
 	def stateToRow(state):

@@ -15,11 +15,6 @@ class Database:
 	STATES
 	"""
 	@classmethod
-	def getState(cls, s_id):
-		cls._tryExecute("SELECT {} FROM state WHERE id = {}".format(DatabaseHelpers.stateFieldsList, s_id))
-		return DatabaseHelpers.rowToState(cls.c.fetchone())
-
-	@classmethod
 	def upsertState(cls, state):
 		cls._tryExecute("""INSERT OR IGNORE INTO state ({}) VALUES (
 			{}
