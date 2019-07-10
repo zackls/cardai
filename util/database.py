@@ -15,6 +15,11 @@ class Database:
 	STATES
 	"""
 	@classmethod
+	def printStates(cls):
+		cls._tryExecute("SELECT * FROM state")
+		print(cls.c.fetchall())
+
+	@classmethod
 	def upsertState(cls, state):
 		cls._tryExecute("""INSERT OR IGNORE INTO state ({}) VALUES (
 			{}
@@ -44,6 +49,11 @@ class Database:
 	def getAction(cls, a_id):
 		cls._tryExecute("SELECT {} FROM action WHERE id = {}".format(DatabaseHelpers.actionFieldsList, a_id))
 		return DatabaseHelpers.rowToAction(cls.c.fetchone())
+
+	@classmethod
+	def printActions(cls):
+		cls._tryExecute("SELECT * FROM action")
+		print(cls.c.fetchall())
 
 	@classmethod
 	def upsertAction(cls, action):
