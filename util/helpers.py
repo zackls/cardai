@@ -2,6 +2,7 @@ import pickle
 import json
 
 from util.card_definitions import CardDefinitions
+from util.constants import game_constants, state_adjacency_constants
 
 '''
 Returns a list of valid actions given a state
@@ -13,7 +14,7 @@ def getValidActionsInState(state):
 	}]
 
 	# add drawing action based on SP
-	if (state["internal"]["status"] == "draw" or state["internal"]["status"] == "wait") and 2 <= state["external"]["sp"]:
+	if (state["internal"]["status"] == "draw" or state["internal"]["status"] == "wait") and state["external"]["sp"] >= game_constants["sp_per_card"]:
 		actions.append({
 			"action": "draw"
 		})
@@ -156,7 +157,7 @@ class DatabaseHelpers:
 		])
 
 	@staticmethod
-	def buildClosestObservedStateQuery(state_id, batch_size):
+	def buildClosestObservedStateQuery(state_id):
 		# formulas for factors should be bounded between 0 and 1. 0 means the
 		# states are as different as possible in this metric, 1 means the states
 		# are identical in this metric. weights for factors also range from 0 to 1
@@ -192,7 +193,7 @@ class DatabaseHelpers:
 			*internal_factors,
 			*external_factors
 		]
-		random_states_query = "SELECT * FROM state ORDER BY RANDOM() LIMIT {}".format(batch_size)
+		random_states_query = "SELECT * FROM state ORDER BY RANDOM() LIMIT {}".format(state_adjacency_constants["batch_size"])
 		state_query = "SELECT * FROM state WHERE id = {}".format(DatabaseHelpers._parseInt(state_id))
 		return """SELECT r.id, (
 			{}

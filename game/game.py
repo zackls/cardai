@@ -2,6 +2,7 @@ import numpy as np
 
 from player.agent import Agent
 from util.card_definitions import CardDefinitions
+from util.constants import game_constants, param_or_default
 from util.deck import Deck
 
 '''
@@ -28,9 +29,9 @@ class Game:
 		characters: a list of characters
 	'''
 	def __init__(self, q, game_params, agent_params, deck_params, character_params):
-		self.verbose = game_params["verbose"] if "verbose" in game_params else False
-		num_agents = game_params["num_agents"] if "num_agents" in game_params else 2
-		num_humans = game_params["num_humans"] if "num_humans" in game_params else 0
+		self.verbose = param_or_default(game_params, game_constants, "verbose")
+		num_agents = param_or_default(game_params, game_constants, "num_agents")
+		num_humans = param_or_default(game_params, game_constants, "num_humans")
 
 		# create and shuffle players
 		self.players = [self._createAgent(q, agent_params) for _ in range(num_agents)] + [self._createHuman() for _ in range(num_humans)]
@@ -49,7 +50,7 @@ class Game:
 
 		# set initial player states
 		self.state = self._createInitialGlobalState()
-		self.max_turns = game_params["max_turns"] if "max_turns" in game_params else 500
+		self.max_turns = param_or_default(game_params, game_constants, "max_turns")
 		self.winning_player = None
 		self.rewards = [0 for p in range(len(self.players))]
 
@@ -172,7 +173,7 @@ class Game:
 		if action["action"] == "draw":
 			i["status"] = "draw"
 			i["cards"].append(self.decks["main"].draw())
-			e["sp"] -= 2
+			e["sp"] -= game_constants["sp_per_card"]
 			# reward a tiny bit for how much sp is left after the draw
 			self.rewards[p] += e["sp"] - e["max_sp"] / 2
 			return True

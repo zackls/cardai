@@ -2,6 +2,7 @@
 from game.game import Game
 
 from util.card_definitions import CardDefinitions
+from util.constants import run_constants
 from util.database import Database
 from util.helpers import loadCardDefinitions, loadCharacterDefinitions
 
@@ -19,9 +20,9 @@ def main():
 	CardDefinitions.setDefinitions(cards["main"], cards["treasures"], cards["answers"])
 
 	# how many games to play per run
-	num_games = 1000
+	num_games = run_constants["num_games"]
 	# every nth game will be verbose
-	verbose_mod = 100
+	verbose_mod = run_constants["verbose_mod"]
 
 	# game params as defined in game/game.py
 	game_params = {
