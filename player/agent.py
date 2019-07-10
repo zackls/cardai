@@ -1,5 +1,6 @@
 import numpy as np
 
+from util.constants import agent_constants, param_or_default
 from util.database import Database
 from util.helpers import getValidActionsInState
 
@@ -36,12 +37,12 @@ class Agent:
         self.memory = []
         self.q = q
 
-        self.learning_rate = params["learning_rate"] if "learning_rate" in params else 0.4
-        self.discount_factor = params["discount_factor"] if "discount_factor" in params else 0.8
-        self.endgame_discount_factor = params["endgame_discount_factor"] if "endgame_discount_factor" in params else 0.975
-        self.random_action_rate = params["random_action_rate"] if "random_action_rate" in params else 0.1
-        self.dyna_steps = params["dyna_steps"] if "dyna_steps" in params else 10
-        self.verbose = params["verbose"] if "verbose" in params else False
+        self.learning_rate = param_or_default(params, agent_constants, "learning_rate")
+        self.discount_factor = param_or_default(params, agent_constants, "discount_factor")
+        self.endgame_discount_factor = param_or_default(params, agent_constants, "endgame_discount_factor")
+        self.random_action_rate = param_or_default(params, agent_constants, "random_action_rate")
+        self.dyna_steps = param_or_default(params, agent_constants, "dyna_steps")
+        self.verbose = param_or_default(params, agent_constants, "verbose")
 
         # Current state
         self.s = None
