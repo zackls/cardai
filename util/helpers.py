@@ -13,7 +13,7 @@ def getValidActionsInState(state):
 	}]
 
 	# add drawing action based on SP
-	if (state["internal"]["status"] == "draw" or state["internal"]["status"] == "wait") and state["external"]["sp"] >= 2:
+	if (state["internal"]["status"] == "draw" or state["internal"]["status"] == "wait") and 2 <= state["external"]["sp"]:
 		actions.append({
 			"action": "draw"
 		})
@@ -21,18 +21,17 @@ def getValidActionsInState(state):
 	# add actions for playing cards based on SP
 	for card in state["internal"]["cards"]:
 		# check if the card can be paid for
-		if card["sp"] < state["external"]["sp"]:
-			continue
-		targets = []
-		if card["type"] == "cocktail":
-			targets = ["l", "r"]
-		elif card["type"] == "snack":
-			targets = ["s"]
-		actions.extend([{
-			"action": "card",
-			"card_id": card["id"],
-			"target": target
-		} for target in targets])
+		if card["sp"] <= state["external"]["sp"]:
+			targets = []
+			if card["type"] == "cocktail":
+				targets = ["l", "r"]
+			elif card["type"] == "snack":
+				targets = ["s"]
+			actions.extend([{
+				"action": "card",
+				"card_id": card["id"],
+				"target": target
+			} for target in targets])
 
 	return actions
 
@@ -69,15 +68,22 @@ class DatabaseHelpers:
 		return int(s) if s != "NULL" else None
 
 	@staticmethod
+	def _parseFloat(n):
+		return str(n) if n != None else "NULL"
+	@staticmethod
+	def _extractFloat(s):
+		return float(s) if s != "NULL" else None
+
+	@staticmethod
 	def _parseBool(b):
-		return "true" if b else "false"
+		return "1" if b else "0"
 	@staticmethod
 	def _extractBool(s):
-		return True if s == "true" else False
+		return True if s == 1 else False
 
 	@staticmethod
 	def _parseStr(s):
-		return s if s != None else "NULL"
+		return "\"{}\"".format(s) if s != None else "NULL"
 	@staticmethod
 	def _extractStr(s):
 		return s if s != "NULL" else None
@@ -102,7 +108,7 @@ class DatabaseHelpers:
 		("answers", "TINYINT", "NOT NULL"),
 		("has_secrets_in_hand", "BOOLEAN", "NOT NULL"),
 		("has_facedown_cards", "BOOLEAN", "NOT NULL"),
-		("num_cards", "TINYINT", "NOT NULL"),
+		# ("num_cards", "TINYINT", "NOT NULL"),
 		("is_friend", "BOOLEAN", "NOT NULL"),
 	]
 	stateFields = [
@@ -123,7 +129,7 @@ class DatabaseHelpers:
 	@staticmethod
 	def _internalStateToRow(internal_state):
 		return ",".join([
-			",".join(sorted([DatabaseHelpers._parseInt(card["id"]) for card in internal_state["cards"]])) if internal_state["cards"].count else "NULL",
+			"\"{}\"".format(",".join(sorted([DatabaseHelpers._parseInt(card["id"]) for card in internal_state["cards"]]))) if internal_state["cards"].count else "NULL",
 			DatabaseHelpers._parseStr(internal_state["status"]),
 		])
 	@staticmethod
@@ -162,22 +168,22 @@ class DatabaseHelpers:
 		internal_factors = [
 			# TODO cards are important
 			# TODO status should probably scale other factors
-			("(r.status = s.status)", 0.1)
+			("r.status = s.status", 0.1)
 		]
 		external_factors = [
 			# SELF
 			# difference in hp, divided by average of max hps
-			("(2 * ABS(r.hp - s.hp) / (r.hp + r.hp_until_max + s.hp + s.hp_until_max))", 0.25),
+			("(2.0 * ABS(r.hp - s.hp) / (r.hp + r.hp_until_max + s.hp + s.hp_until_max))", 0.25),
 			# difference in sp, divided by average of max sps
-			("(2 * ABS(r.sp - s.sp) / (r.max_sp + s.max_sp))", 0.2),
+			("(2.0 * ABS(r.sp - s.sp) / (r.max_sp + s.max_sp))", 0.2),
 
 			# LEFT mimics self, but weight is halved
-			("(2 * ABS(r.left_hp - s.left_hp) / (r.left_hp + r.left_hp_until_max + s.left_hp + s.left_hp_until_max))", 0.125),
-			("(2 * ABS(r.left_sp - s.left_sp) / (r.left_max_sp + s.left_max_sp))", 0.1),
+			("(2.0 * ABS(r.left_hp - s.left_hp) / (r.left_hp + r.left_hp_until_max + s.left_hp + s.left_hp_until_max))", 0.125),
+			("(2.0 * ABS(r.left_sp - s.left_sp) / (r.left_max_sp + s.left_max_sp))", 0.1),
 
 			# RIGHT mimics self, but weight is halved
-			("(2 * ABS(r.right_hp - s.right_hp) / (r.right_hp + r.right_hp_until_max + s.right_hp + s.right_hp_until_max))", 0.125),
-			("(2 * ABS(r.right_sp - s.right_sp) / (r.right_max_sp + s.right_max_sp))", 0.1),
+			("(2.0 * ABS(r.right_hp - s.right_hp) / (r.right_hp + r.right_hp_until_max + s.right_hp + s.right_hp_until_max))", 0.125),
+			("(2.0 * ABS(r.right_sp - s.right_sp) / (r.right_max_sp + s.right_max_sp))", 0.1),
 
 			# TODO treasures, answers, has_secrets_in_hand, has_facedown_cards, is_friend
 		]
@@ -187,11 +193,11 @@ class DatabaseHelpers:
 			*external_factors
 		]
 		random_states_query = "SELECT * FROM state ORDER BY RANDOM() LIMIT {}".format(batch_size)
-		state_query = "SELECT * FROM state WHERE id = {}".format(state_id)
+		state_query = "SELECT * FROM state WHERE id = {}".format(DatabaseHelpers._parseInt(state_id))
 		return """SELECT r.id, (
 			{}
 		) as similarity FROM ({}) r CROSS JOIN ({}) s ORDER BY similarity DESC LIMIT 1""".format(
-			"*".join(["(1 - ({}) * {})".format(formula, weight) for formula, weight in factors]),
+			"*".join(["(1.0 - ({}) * {})".format(formula, weight) for formula, weight in factors]),
 			random_states_query,
 			state_query
 		)
@@ -211,12 +217,12 @@ class DatabaseHelpers:
 		return ",".join([
 			DatabaseHelpers._parseStr(action["action"]),
 			DatabaseHelpers._parseInt(["card"]["id"]) if "card" in action else "NULL",
-			DatabaseHelpers._parseStr(action["target"]),
+			DatabaseHelpers._parseStr(action["target"]) if "target" in action else "NULL",
 		])
 	@staticmethod
 	def rowToAction(row):
 		return {
 			"action": DatabaseHelpers._extractStr(row[0]),
-			"card": DatabaseHelpers._extractInt(CardDefinitions.getCardById(int(row[1]))),
+			"card": CardDefinitions.getCardById(DatabaseHelpers._extractInt(int(row[1]))),
 			"target": DatabaseHelpers._extractStr(row[2])
 		}

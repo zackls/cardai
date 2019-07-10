@@ -3,17 +3,25 @@ import sqlite3
 from util.helpers import DatabaseHelpers
 
 class Database:
+	@classmethod
+	def _tryExecute(cls, clause):
+		try:
+			cls.c.execute(clause)
+		except Exception as e:
+			print(clause)
+			raise e
+
 	"""
 	STATES
 	"""
 	@classmethod
 	def getState(cls, s_id):
-		cls.c.execute("SELECT {} FROM state WHERE id = {}".format(DatabaseHelpers.stateFieldsList, s_id))
+		cls._tryExecute("SELECT {} FROM state WHERE id = {}".format(DatabaseHelpers.stateFieldsList, s_id))
 		return DatabaseHelpers.rowToState(cls.c.fetchone())
 
 	@classmethod
 	def upsertState(cls, state):
-		cls.c.execute("""UPSERT INTO state VALUES ({}) (
+		cls._tryExecute("""INSERT OR IGNORE INTO state ({}) VALUES (
 			{}
 		)""".format(
 			DatabaseHelpers.stateFieldsList,
@@ -27,9 +35,10 @@ class Database:
 	states from q and computing the closest.
 	'''
 	@classmethod
-	def getClosestObservedStateId(cls, to_s_id, batch_size=100):
-		cls.c.execute(DatabaseHelpers.buildClosestObservedStateQuery(to_s_id, batch_size))
-		state_id, similarity = cls.c.fetchone()
+	def getClosestObservedStateId(cls, to_s_id):
+		cls._tryExecute(DatabaseHelpers.buildClosestObservedStateQuery(to_s_id))
+		row = cls.c.fetchone()
+		state_id, similarity = row if row != None else (None, 0)
 		return state_id, similarity
 
 
@@ -38,12 +47,12 @@ class Database:
 	"""
 	@classmethod
 	def getAction(cls, a_id):
-		cls.c.execute("SELECT {} FROM action WHERE id = {}".format(DatabaseHelpers.actionFieldsList, a_id))
+		cls._tryExecute("SELECT {} FROM action WHERE id = {}".format(DatabaseHelpers.actionFieldsList, a_id))
 		return DatabaseHelpers.rowToAction(cls.c.fetchone())
 
 	@classmethod
 	def upsertAction(cls, action):
-		cls.c.execute("""UPSERT INTO action VALUES ({}) (
+		cls._tryExecute("""INSERT OR IGNORE INTO action ({}) VALUES (
 			{}
 		)""".format(
 			DatabaseHelpers.actionFieldsList,
@@ -58,7 +67,7 @@ class Database:
 	@classmethod
 	def getQTable(cls):
 		q = {}
-		cls.c.execute("SELECT state_id, action_id, q FROM q")
+		cls._tryExecute("SELECT state_id, action_id, q FROM q")
 		for state_id, action_id, q_value in cls.c.fetchall():
 			if state_id not in q:
 				q[state_id] = {}
@@ -68,10 +77,10 @@ class Database:
 	@classmethod
 	def updateQ(cls, s_id, a_id, q):
 		# on conflict of unique keys, update q
-		cls.c.execute("""INSERT INTO q VALUES (state_id, action_id, q) (
+		cls._tryExecute("""INSERT OR REPLACE INTO q (state_id, action_id, q) VALUES (
 			{}
-		) ON CONFLICT (state_id, action_id) DO UPDATE SET q = excluded.q""".format(
-			",".join([s_id, a_id, q]),
+		)""".format(
+			",".join([DatabaseHelpers._parseInt(s_id), DatabaseHelpers._parseInt(a_id), DatabaseHelpers._parseFloat(q)]),
 		))
 
 
@@ -93,7 +102,7 @@ class Database:
 
 	@classmethod
 	def createDatabase(cls):
-		cls.c.execute("""CREATE TABLE state(
+		cls._tryExecute("""CREATE TABLE state(
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			{},
 			UNIQUE({})
@@ -102,7 +111,7 @@ class Database:
 			DatabaseHelpers.stateFieldsList
 		))
 
-		cls.c.execute("""CREATE TABLE action(
+		cls._tryExecute("""CREATE TABLE action(
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			{},
 			UNIQUE({})
@@ -111,7 +120,7 @@ class Database:
 			DatabaseHelpers.actionFieldsList
 		))
 
-		cls.c.execute("""CREATE TABLE q(
+		cls._tryExecute("""CREATE TABLE q(
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			state_id INTEGER NOT NULL,
 			action_id INTEGER NOT NULL,
@@ -125,7 +134,7 @@ class Database:
 
 	@classmethod
 	def destroyDatabase(cls):
-		cls.c.execute("DROP TABLE IF EXISTS state")
-		cls.c.execute("DROP TABLE IF EXISTS action")
-		cls.c.execute("DROP TABLE IF EXISTS q")
+		cls._tryExecute("DROP TABLE IF EXISTS state")
+		cls._tryExecute("DROP TABLE IF EXISTS action")
+		cls._tryExecute("DROP TABLE IF EXISTS q")
 		cls.commit()
