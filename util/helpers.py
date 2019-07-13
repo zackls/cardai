@@ -1,7 +1,6 @@
 import pickle
 import json
 
-from util.card_definitions import CardDefinitions
 from util.constants import game_constants, state_adjacency_constants
 
 '''
@@ -63,14 +62,14 @@ class DatabaseHelpers:
 	"""
 	@staticmethod
 	def _parseInt(n):
-		return str(n if n != None else -1)
+		return str(n) if n != None else "\"-1\""
 	@staticmethod
 	def _extractInt(s):
 		return s if s != -1 else None
 
 	@staticmethod
 	def _parseFloat(n):
-		return str(n if n != None else -1)
+		return str(n) if n != None else "\"-1\""
 	@staticmethod
 	def _extractFloat(s):
 		return s if s != -1 else None
@@ -84,7 +83,7 @@ class DatabaseHelpers:
 
 	@staticmethod
 	def _parseStr(s):
-		return "\"{}\"".format(s) if s != None else ""
+		return "\"{}\"".format(s) if s != None else "\"\""
 	@staticmethod
 	def _extractStr(s):
 		return s if s != "" else None
@@ -119,23 +118,24 @@ class DatabaseHelpers:
 		*[("left_{}".format(field), datatype) for field, datatype in externalStateFields],
 		*[("right_{}".format(field), datatype) for field, datatype in externalStateFields],
 	]
-	stateFieldsList = ",".join([field for field, _ in stateFields])
+	stateFieldsList = [field for field, _ in stateFields]
+	stateFieldsListString = ",".join([field for field, _ in stateFields])
 
 	@staticmethod
 	def _globalStateToRow(global_state):
-		return ",".join([
+		return [
 			DatabaseHelpers._parseInt(global_state["turn"]),
 			# DatabaseHelpers._parseInt(global_state["musician"]["id"]) if global_state["musician"] != None else "NULL",
-		])
+		]
 	@staticmethod
 	def _internalStateToRow(internal_state):
-		return ",".join([
+		return [
 			"\"{}\"".format(",".join(sorted([DatabaseHelpers._parseInt(card["id"]) for card in internal_state["cards"]]))) if internal_state["cards"].count else "NULL",
 			DatabaseHelpers._parseStr(internal_state["status"]),
-		])
+		]
 	@staticmethod
 	def _externalStateToRow(external_state):
-		return ",".join([
+		return [
 			DatabaseHelpers._parseInt(external_state["hp"]),
 			DatabaseHelpers._parseInt(external_state["hp_until_max"]),
 			DatabaseHelpers._parseInt(external_state["sp"]),
@@ -145,16 +145,16 @@ class DatabaseHelpers:
 			# DatabaseHelpers._parseBool(external_state["has_secrets_in_hand"]),
 			# DatabaseHelpers._parseBool(external_state["has_facedown_cards"]),
 			# DatabaseHelpers._parseBool(external_state["is_friend"])
-		])
+		]
 	@staticmethod
 	def stateToRow(state):
-		return ",".join([
-			DatabaseHelpers._globalStateToRow(state["g"]),
-			DatabaseHelpers._internalStateToRow(state["internal"]),
-			DatabaseHelpers._externalStateToRow(state["external"]),
-			DatabaseHelpers._externalStateToRow(state["left"]),
-			DatabaseHelpers._externalStateToRow(state["right"]),
-		])
+		return [
+			*DatabaseHelpers._globalStateToRow(state["g"]),
+			*DatabaseHelpers._internalStateToRow(state["internal"]),
+			*DatabaseHelpers._externalStateToRow(state["external"]),
+			*DatabaseHelpers._externalStateToRow(state["left"]),
+			*DatabaseHelpers._externalStateToRow(state["right"]),
+		]
 
 	@staticmethod
 	def buildClosestObservedStateQuery(state_id):
@@ -211,19 +211,20 @@ class DatabaseHelpers:
 		("card_id", "TINYINT"),
 		("target", "VARCHAR(1)")
 	]
-	actionFieldsList = ",".join([field for field, _ in actionFields])
+	actionFieldsList = [field for field, _ in actionFields]
+	actionFieldsListString = ",".join(actionFieldsList)
 
 	@staticmethod
 	def actionToRow(action):
-		return ",".join([
+		return [
 			DatabaseHelpers._parseStr(action["action"]),
-			DatabaseHelpers._parseInt(["card"]["id"]) if "card" in action else -1,
-			DatabaseHelpers._parseStr(action["target"]) if "target" in action else "",
-		])
+			DatabaseHelpers._parseInt(action["card_id"]) if "card_id" in action else "\"-1\"",
+			DatabaseHelpers._parseStr(action["target"]) if "target" in action else "\"\"",
+		]
 	@staticmethod
 	def rowToAction(row):
 		return {
 			"action": DatabaseHelpers._extractStr(row[0]),
-			"card": CardDefinitions.getCardById(DatabaseHelpers._extractInt(int(row[1]))),
+			"card_id": DatabaseHelpers._extractInt(row[1]),
 			"target": DatabaseHelpers._extractStr(row[2])
 		}
