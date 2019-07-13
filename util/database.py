@@ -21,13 +21,17 @@ class Database:
 
 	@classmethod
 	def upsertState(cls, state):
+		row_values = DatabaseHelpers.stateToRow(state)
 		cls._tryExecute("""INSERT OR IGNORE INTO state ({}) VALUES (
 			{}
 		)""".format(
-			DatabaseHelpers.stateFieldsList,
-			DatabaseHelpers.stateToRow(state),
+			DatabaseHelpers.stateFieldsListString,
+			",".join(row_values),
 		))
-		return cls.c.lastrowid
+		cls._tryExecute("""SELECT id FROM state WHERE {} LIMIT 1""".format(
+			" AND ".join(["{}={}".format(DatabaseHelpers.stateFieldsList[i], val) for i, val in enumerate(row_values)])
+		))
+		return cls.c.fetchone()[0]
 
 	'''
 	Finds the closest state to the state passed in.
@@ -47,7 +51,7 @@ class Database:
 	"""
 	@classmethod
 	def getAction(cls, a_id):
-		cls._tryExecute("SELECT {} FROM action WHERE id = {}".format(DatabaseHelpers.actionFieldsList, a_id))
+		cls._tryExecute("SELECT {} FROM action WHERE id = {}".format(DatabaseHelpers.actionFieldsListString, a_id))
 		return DatabaseHelpers.rowToAction(cls.c.fetchone())
 
 	@classmethod
@@ -57,13 +61,15 @@ class Database:
 
 	@classmethod
 	def upsertAction(cls, action):
-		cls._tryExecute("""INSERT OR IGNORE INTO action ({}) VALUES (
-			{}
-		)""".format(
-			DatabaseHelpers.actionFieldsList,
-			DatabaseHelpers.actionToRow(action),
+		row_values = DatabaseHelpers.actionToRow(action)
+		cls._tryExecute("""INSERT OR IGNORE INTO action ({}) VALUES ({})""".format(
+			DatabaseHelpers.actionFieldsListString,
+			",".join(row_values),
 		))
-		return cls.c.lastrowid
+		cls._tryExecute("""SELECT id FROM action WHERE {} LIMIT 1""".format(
+			" AND ".join(["{}={}".format(DatabaseHelpers.actionFieldsList[i], val) for i, val in enumerate(row_values)])
+		))
+		return cls.c.fetchone()[0]
 
 
 	"""
@@ -108,25 +114,25 @@ class Database:
 	@classmethod
 	def createDatabase(cls):
 		cls._tryExecute("""CREATE TABLE state(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id INTEGER PRIMARY KEY,
 			{},
 			UNIQUE({})
 		)""".format(
 			",".join(["{} {} NOT NULL".format(field, datatype) for field, datatype in DatabaseHelpers.stateFields]),
-			DatabaseHelpers.stateFieldsList
+			DatabaseHelpers.stateFieldsListString
 		))
 
 		cls._tryExecute("""CREATE TABLE action(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id INTEGER PRIMARY KEY,
 			{},
 			UNIQUE({})
 		)""".format(
 			",".join(["{} {} NOT NULL".format(field, datatype) for field, datatype in DatabaseHelpers.actionFields]),
-			DatabaseHelpers.actionFieldsList
+			DatabaseHelpers.actionFieldsListString
 		))
 
 		cls._tryExecute("""CREATE TABLE q(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id INTEGER PRIMARY KEY,
 			state_id INTEGER NOT NULL,
 			action_id INTEGER NOT NULL,
 			q REAL NOT NULL,

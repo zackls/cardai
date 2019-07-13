@@ -5,6 +5,7 @@ from util.card_definitions import CardDefinitions
 from util.constants import run_constants
 from util.database import Database
 from util.helpers import loadCardDefinitions, loadCharacterDefinitions
+from util.helpers import DatabaseHelpers
 
 def main():
 	# TODO implement command-line args
@@ -15,6 +16,9 @@ def main():
 
 	cards = loadCardDefinitions()
 	characters = loadCharacterDefinitions()
+	
+	# Database.printActions()
+	# return
 
 	# initialize card definitions for querying
 	CardDefinitions.setDefinitions(cards["main"], cards["treasures"], cards["answers"])
