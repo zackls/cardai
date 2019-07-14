@@ -3,6 +3,7 @@ import numpy as np
 from util.constants import agent_constants, param_or_default
 from util.database import Database
 from util.helpers import getValidActionsInState
+from util.stats import Stats
 
 '''
 The agent represents a player in the game. The purpose of this algorithm is to
@@ -172,6 +173,7 @@ class Agent:
         else:
             action = Database.getAction(recommended_a_id)
             self._printIfVerbose("agent chose", action)
+            Stats.recordStat("{}{}".format("chosen_action={}".format(action["action"]), "_id={}".format(action["card_id"]) if "card_id" in action and action["card_id"] != None else ""))
             return recommended_a_id, action
 
     def _snapState(self):

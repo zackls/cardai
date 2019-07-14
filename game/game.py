@@ -4,6 +4,7 @@ from player.agent import Agent
 from util.card_definitions import CardDefinitions
 from util.constants import game_constants, param_or_default
 from util.deck import Deck
+from util.stats import Stats
 
 '''
 A Game sets up and handles state and actions for players. Helpful notes:
@@ -134,6 +135,7 @@ class Game:
 			if self.winning_player != None:
 				return
 
+		Stats.recordStat("turns")
 		self.state["g"]["turn"] += 1
 
 	'''
