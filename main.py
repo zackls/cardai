@@ -5,7 +5,7 @@ from util.card_definitions import CardDefinitions
 from util.constants import run_constants
 from util.database import Database
 from util.helpers import loadCardDefinitions, loadCharacterDefinitions
-from util.helpers import DatabaseHelpers
+from util.stats import Stats
 
 def main():
 	# TODO implement command-line args
@@ -64,10 +64,14 @@ def main():
 		print("Running game {}".format(game_number + 1))
 		game = Game(q, game_params, agent_params, deck_params, character_params)
 		game.run()
+		Stats.recordStat("games")
 
 	# deinitialize database
 	Database.destroy()
- 
+
+	Stats.printStats()
+	Stats.graphChosenActionUsage()
+	Stats.graphTurnCountPerGame()
 
 if __name__ == "__main__":
 	main()
