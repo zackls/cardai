@@ -96,7 +96,7 @@ class Agent:
             # Update q for past decisions
             for i in range(start, -1, -1):
                 _, best_future_utility = self._recommendAction(self.memory[i]["s'"])
-                self._updateQ(self.memory[i]["s"], self.memory[i]["a"], self.memory[i]["s'"], self.memory[i]["r"], df, best_future_utility)
+                self._updateQ(self.memory[i]["s"], self.memory[i]["a"], self.memory[i]["r"], df, 1, best_future_utility)
 
         # Remember this
         self.memory.append({
@@ -111,8 +111,6 @@ class Agent:
 
         # Select new action
         self.a_id, self.a = self._selectAction(recommended_a_id)
-
-        Database.commit()
 
         return self.a
 
@@ -138,6 +136,7 @@ class Agent:
             for a_id, expected_reward in self.q[in_s_id].items():
                 if expected_reward > best_future_utility:
                     recommended_a_id = a_id
+                    best_future_utility = expected_reward
         return recommended_a_id, best_future_utility
 
     '''
