@@ -65,6 +65,8 @@ def main():
 
 		agent_params["learning_rate"] *= 1 - agent_constants["learning_rate_decay"]
 
+	Database.commit()
+
 	# deinitialize database
 	Database.destroy()
 
