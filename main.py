@@ -69,6 +69,7 @@ def main():
 	Database.destroy()
 
 	Stats.printStats()
+	Stats.printQStats(q)
 	Stats.graphChosenActionUsage()
 	Stats.graphTurnCountPerGame()
 
