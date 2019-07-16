@@ -22,6 +22,20 @@ class Stats:
 		print("")
 
 	@staticmethod
+	def printQStats(q):
+		print("")
+		print("--- Q ----")
+		ct = 0
+		s = 0
+		for s_id in q.keys():
+			for a_id in q[s_id].keys():
+				ct += 1
+				s += q[s_id][a_id]
+		print("sum", s)
+		print("average", s / ct)
+		print("")
+
+	@staticmethod
 	def graphChosenActionUsage(segments=250):
 		increment = (time.time() - Stats.start_time) / segments
 		columns = []
