@@ -1,5 +1,7 @@
 agent_constants = {
 	"learning_rate": 0.4,
+	# decay happens every game
+	"learning_rate_decay": 0.001,
 	"discount_factor": 0.8,
 	"endgame_discount_factor": 0.975,
 	"random_action_rate": 0.1,
@@ -9,7 +11,7 @@ agent_constants = {
 
 run_constants = {
 	"num_games": 1000,
-	"verbose_mod": 1,
+	"verbose_mod": 50,
 }
 
 game_constants = {
