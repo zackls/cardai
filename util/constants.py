@@ -17,7 +17,7 @@ game_constants = {
 	"num_humans": 0,
 	"sp_per_card": 2,
 	"max_turns": 500,
-	"win_reward": 1000,
+	"win_reward": 500,
 	"verbose": False,
 }
 

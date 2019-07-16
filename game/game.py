@@ -170,6 +170,8 @@ class Game:
 
 		if action["action"] == "pass":
 			i["status"] = "wait"
+			# small constant penalty for passing
+			self.rewards[p] -= 10
 			return False
 
 		if action["action"] == "draw":
@@ -238,12 +240,12 @@ class Game:
 	'''
 	def _finishGame(self):
 		for p in range(len(self.players)):
-			# the winner is given a reward of 1000, -1000 reward is distributed
-			# amongst the losers
+			# the winner is given a reward for winning, the negative of that
+			# reward is distributed amongst the losers
 			if self.players[p] == self.winning_player:
-				self.rewards[p] += 1000
+				self.rewards[p] += game_constants["win_reward"]
 			else:
-				self.rewards[p] -= 1000 / (len(self.players) - 1)
+				self.rewards[p] -= (game_constants["win_reward"]) / (len(self.players) - 1)
 			self._queryP(p)
 
 	'''
