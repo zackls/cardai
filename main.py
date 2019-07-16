@@ -2,7 +2,7 @@
 from game.game import Game
 
 from util.card_definitions import CardDefinitions
-from util.constants import run_constants
+from util.constants import agent_constants, run_constants
 from util.database import Database
 from util.helpers import loadCardDefinitions, loadCharacterDefinitions
 from util.stats import Stats
@@ -16,9 +16,6 @@ def main():
 
 	cards = loadCardDefinitions()
 	characters = loadCharacterDefinitions()
-	
-	# Database.printActions()
-	# return
 
 	# initialize card definitions for querying
 	CardDefinitions.setDefinitions(cards["main"], cards["treasures"], cards["answers"])
@@ -37,7 +34,7 @@ def main():
 
 	# agent params as defined in player/agent.py
 	agent_params = {
-		# "learning_rate"
+		"learning_rate": agent_constants["learning_rate"]
 		# "discount_factor"
 		# "endgame_discount_factor"
 		# "random_action_rate"
@@ -65,6 +62,8 @@ def main():
 		game = Game(q, game_params, agent_params, deck_params, character_params)
 		game.run()
 		Stats.recordStat("games")
+
+		agent_params["learning_rate"] *= 1 - agent_constants["learning_rate_decay"]
 
 	# deinitialize database
 	Database.destroy()
